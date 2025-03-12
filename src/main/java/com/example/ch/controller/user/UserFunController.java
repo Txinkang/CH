@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ch.common.Response.Result;
 import com.example.ch.model.entity.Cart;
+import com.example.ch.model.entity.ForumComment;
+import com.example.ch.model.entity.ForumPost;
 import com.example.ch.model.entity.Orders;
 import com.example.ch.model.entity.Product;
+import com.example.ch.model.entity.ProductComment;
 import com.example.ch.service.user.UserFunService;
 
 @RestController
@@ -68,6 +71,15 @@ public class UserFunController {
         return funManageService.getOrder(pageNum, pageSize);
     }
 
+    @PostMapping("/evaluateProduct")
+    public Result evaluateProduct(@RequestBody ProductComment productComment) {
+        return funManageService.evaluateProduct(productComment);
+    }
+
+    @GetMapping("/getProductComment")
+    public Result getProductComment(@RequestParam("product_id") String productId, @RequestParam("page_num") int pageNum, @RequestParam("page_size") int pageSize) {
+        return funManageService.getProductComment(productId, pageNum, pageSize);
+    }
     //=======================================购物车=======================================
     @DeleteMapping("/deleteCart")
     public Result deleteCart(@RequestParam("cart_id") String cartId) {
@@ -78,5 +90,27 @@ public class UserFunController {
     public Result getCart() {
         return funManageService.getCart();
     }
+
+
+    //=======================================论坛=======================================
+    @GetMapping("/getPost")
+    public Result getPost(
+        @RequestParam("post_title") String postTitle,
+        @RequestParam("page_num") int pageNum,
+        @RequestParam("page_size") int pageSize
+    ) {
+        return funManageService.getPost(postTitle, pageNum, pageSize);
+    }
+
+    @GetMapping("/getComment")
+    public Result getComment(@RequestParam("post_id") String postId) {
+        return funManageService.getComment(postId);
+    }
+
+    @PostMapping("/sendComment")
+    public Result sendComment(@RequestBody ForumComment addComment) {
+        return funManageService.sendComment(addComment);
+    }
+
 
 }

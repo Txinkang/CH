@@ -150,6 +150,20 @@ public class FunManageController {
     public Result deleteProduct(@RequestParam("product_id") String productId) {
         return funManageService.deleteProduct(productId);
     }
+    @GetMapping("/getProductComment")
+    public Result getProductComment(@RequestParam("product_id") String productId, @RequestParam("page_num") int pageNum, @RequestParam("page_size") int pageSize) {
+        return funManageService.getProductComment(productId, pageNum, pageSize);
+    }
 
+    //=======================================订单=======================================
+    @GetMapping("/getOrder")
+    public Result getOrder(
+        @RequestParam(value = "user_account", required = false) String userAccount,
+        @RequestParam(value = "product_name", required = false) String productName,
+        @RequestParam(value = "order_id", required = false) String orderId, 
+        @RequestParam(value = "page_num", required = true) int pageNum, 
+        @RequestParam(value = "page_size", required = true) int pageSize) {
+        return funManageService.getOrder(userAccount, productName, orderId, pageNum, pageSize);
+    }
 
 }

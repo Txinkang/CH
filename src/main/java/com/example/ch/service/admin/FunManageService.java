@@ -40,4 +40,8 @@ public interface FunManageService {
     Result getProduct(String productName, int pageNum, int pageSize);
 
     Result deleteProduct(String productId);
+
+    Result getProductComment(String productId, int pageNum, int pageSize);
+
+    Result getOrder(String userAccount, String productName, String orderId, int pageNum, int pageSize);
 }

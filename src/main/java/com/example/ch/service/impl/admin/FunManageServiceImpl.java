@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.ch.common.Response.PageResponse;
@@ -19,11 +20,18 @@ import com.example.ch.common.Response.ResultCode;
 import com.example.ch.model.entity.Announcement;
 import com.example.ch.model.entity.Banner;
 import com.example.ch.model.entity.ForumPost;
+import com.example.ch.model.entity.Orders;
 import com.example.ch.model.entity.Product;
+import com.example.ch.model.entity.ProductComment;
+import com.example.ch.model.entity.User;
 import com.example.ch.repository.AnnouncementRepository;
 import com.example.ch.repository.BannerRepository;
+import com.example.ch.repository.ForumCommentRepository;
 import com.example.ch.repository.ForumPostRepository;
+import com.example.ch.repository.OrdersRepository;
+import com.example.ch.repository.ProductCommentRepository;
 import com.example.ch.repository.ProductRepository;
+import com.example.ch.repository.UserRepository;
 import com.example.ch.service.admin.FunManageService;
 import com.example.ch.utils.FileUtil;
 import com.example.ch.utils.LogUtil;
@@ -43,6 +51,18 @@ public class FunManageServiceImpl implements FunManageService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private ProductCommentRepository productCommentRepository;
+
+    @Autowired
+    private OrdersRepository ordersRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ForumCommentRepository forumCommentRepository;
 
     @Value("${uploadFilePath.bannerPicturesPath}")
     private String bannerPicturesPath;
@@ -358,6 +378,7 @@ public class FunManageServiceImpl implements FunManageService {
                 return new Result(ResultCode.R_FileNotFound);
             }
             forumPostRepository.delete(post);
+            forumCommentRepository.deleteByPostId(postId);
             return new Result(ResultCode.R_Ok);
         } catch (Exception e) {
             logUtil.error("删除论坛帖子失败", e);
@@ -482,6 +503,7 @@ public class FunManageServiceImpl implements FunManageService {
     }
 
     @Override
+    @Transactional
     public Result deleteProduct(String productId) {
         try {
             // 验证参数
@@ -497,9 +519,84 @@ public class FunManageServiceImpl implements FunManageService {
                 FileUtil.deleteFiles(productImage, productPicturesPath);
             }
             productRepository.delete(product);
+            // 删除商品评价
+            productCommentRepository.deleteByProductId(productId);
             return new Result(ResultCode.R_Ok);
         } catch (Exception e) {
             logUtil.error("删除商品失败", e);
+            return new Result(ResultCode.R_UpdateDbFailed);
+        }
+    }
+
+    @Override
+    public Result getProductComment(String productId, int pageNum, int pageSize) {
+        try {
+            PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
+            Page<ProductComment> page = productCommentRepository.findByProductId(productId, pageRequest);
+            return new Result(ResultCode.R_Ok, page.getContent());
+        } catch (Exception e) {
+            logUtil.error("获取商品评价失败", e);
+            return new Result(ResultCode.R_UpdateDbFailed);
+        }
+    }
+
+    @Override
+    public Result getOrder(String userAccount, String productName, String orderId, int pageNum, int pageSize) {
+        try {
+            PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);  
+            PageResponse<Orders> pageResponse = new PageResponse<>();
+            // 先查询用户账号
+            User user = null;
+            if(userAccount != null && !userAccount.isEmpty()){
+                user = userRepository.findByUserAccount(userAccount);
+                if (user == null) {
+                    return new Result(ResultCode.R_Ok, new ArrayList<>());
+                }
+            }
+
+            // 查询商品
+            Product product = null;
+            if(productName != null && !productName.isEmpty()){
+                product = productRepository.findByProductName(productName); 
+                if (product == null) {
+                    return new Result(ResultCode.R_Ok, new ArrayList<>());
+                }
+            }
+
+            // 查询订单
+            Orders order = null;
+            if(orderId != null && !orderId.isEmpty()){
+                order = ordersRepository.findByOrderId(orderId, pageRequest).getContent().get(0);
+                if (order == null) {
+                    return new Result(ResultCode.R_Ok, new ArrayList<>());
+                }
+            }
+
+            // 组合查询订单
+            Page<Orders> page;
+            if (user != null && product != null && order != null) {
+                page = ordersRepository.findByUserIdAndProductIdAndOrderId(user.getUserId(), product.getProductId(), order.getOrderId(), pageRequest);
+            } else if (user != null && product != null) {
+                page = ordersRepository.findByUserIdAndProductId(user.getUserId(), product.getProductId(), pageRequest);
+            } else if (user != null && order != null) {
+                page = ordersRepository.findByUserIdAndOrderId(user.getUserId(), order.getOrderId(), pageRequest);
+            } else if (product != null && order != null) {
+                page = ordersRepository.findByProductIdAndOrderId(product.getProductId(), order.getOrderId(), pageRequest);
+            } else if (user != null) {
+                page = ordersRepository.findByUserId(user.getUserId(), pageRequest);
+            } else if (product != null) {
+                page = ordersRepository.findByProductId(product.getProductId(), pageRequest);
+            } else if (order != null) {
+                page = ordersRepository.findByOrderId(order.getOrderId(), pageRequest);
+            } else {
+                page = ordersRepository.findAll(pageRequest);
+            }
+            pageResponse.setTotal_item(page.getTotalElements());
+            pageResponse.setData(page.getContent());
+            return new Result(ResultCode.R_Ok, pageResponse);
+            
+        } catch (Exception e) {
+            logUtil.error("获取订单失败", e);
             return new Result(ResultCode.R_UpdateDbFailed);
         }
     }

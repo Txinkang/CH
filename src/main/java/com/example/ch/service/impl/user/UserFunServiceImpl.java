@@ -19,13 +19,19 @@ import com.example.ch.constant.OrderConstantdata;
 import com.example.ch.model.entity.Announcement;
 import com.example.ch.model.entity.Banner;
 import com.example.ch.model.entity.Cart;
+import com.example.ch.model.entity.ForumComment;
+import com.example.ch.model.entity.ForumPost;
 import com.example.ch.model.entity.Orders;
 import com.example.ch.model.entity.Product;
+import com.example.ch.model.entity.ProductComment;
 import com.example.ch.model.entity.User;
 import com.example.ch.repository.AnnouncementRepository;
 import com.example.ch.repository.BannerRepository;
 import com.example.ch.repository.CartRepository;
+import com.example.ch.repository.ForumCommentRepository;
+import com.example.ch.repository.ForumPostRepository;
 import com.example.ch.repository.OrdersRepository;
+import com.example.ch.repository.ProductCommentRepository;
 import com.example.ch.repository.ProductRepository;
 import com.example.ch.repository.UserRepository;
 import com.example.ch.service.user.UserFunService;
@@ -52,6 +58,15 @@ public class UserFunServiceImpl implements UserFunService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ProductCommentRepository productCommentRepository;
+
+    @Autowired
+    private ForumPostRepository forumPostRepository;
+
+    @Autowired
+    private ForumCommentRepository forumCommentRepository;
 
     @Override
     public Result getBanner() {
@@ -196,13 +211,45 @@ public class UserFunServiceImpl implements UserFunService {
             }
             PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
             Page<Orders> page = ordersRepository.findByUserId(userId, pageRequest);
-            return new Result(ResultCode.R_Ok, page.getContent());
+            PageResponse<Orders> pageResponse = new PageResponse<>();
+            pageResponse.setTotal_item(page.getTotalElements());
+            pageResponse.setData(page.getContent());
+            return new Result(ResultCode.R_Ok, pageResponse);
         } catch (Exception e) {
             logUtil.error("获取订单失败", e);
             return new Result(ResultCode.R_UpdateDbFailed);
         }
     }
 
+    @Override
+    public Result evaluateProduct(ProductComment productComment) {
+        try {
+            String userId = ThreadLocalUtil.getUserId();
+            if(userId == null){
+                return new Result(ResultCode.R_UserNotFound);
+            }
+            productComment.setUserId(userId);
+            productComment.setProductCommentId(UUID.randomUUID().toString());
+            productComment.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+            productCommentRepository.save(productComment);
+            return new Result(ResultCode.R_Ok);
+        } catch (Exception e) {
+            logUtil.error("评价商品失败", e);
+            return new Result(ResultCode.R_UpdateDbFailed);
+        }
+    }
+
+    @Override
+    public Result getProductComment(String productId, int pageNum, int pageSize) {
+        try {
+            PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
+            Page<ProductComment> page = productCommentRepository.findByProductId(productId, pageRequest);
+            return new Result(ResultCode.R_Ok, page.getContent());
+        } catch (Exception e) {
+            logUtil.error("获取商品评价失败", e);
+            return new Result(ResultCode.R_UpdateDbFailed);
+        }
+    }
     //=======================================购物车=======================================
     @Override
     public Result deleteCart(String cartId) {
@@ -234,8 +281,60 @@ public class UserFunServiceImpl implements UserFunService {
         }
     }
 
-    
 
-    
+    //=======================================论坛=======================================
+    @Override
+    public Result getPost(String postTitle, int pageNum, int pageSize) {
+        try {
+            PageResponse<ForumPost> pageResponse = new PageResponse<>();
+            if(postTitle != null && !postTitle.isEmpty()){
+                List<ForumPost> postList = new ArrayList<>();
+                ForumPost post = forumPostRepository.findByPostTitle(postTitle);
+                if(post != null){
+                    postList.add(post);
+                }
+                pageResponse.setTotal_item(postList.size());
+                pageResponse.setData(postList);
+            } else {
+                PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
+                Page<ForumPost> page = forumPostRepository.findAll(pageRequest);
+                pageResponse.setTotal_item(page.getTotalElements());
+                pageResponse.setData(page.getContent());
+            }
+            return new Result(ResultCode.R_Ok, pageResponse);
+        } catch (Exception e) {
+            logUtil.error("获取论坛帖子失败", e);
+            return new Result(ResultCode.R_UpdateDbFailed);
+        }
+    }
+
+    @Override
+    public Result getComment(String postId) {
+        try {
+            List<ForumComment> commentList = forumCommentRepository.findByPostId(postId);
+            return new Result(ResultCode.R_Ok, commentList);
+        } catch (Exception e) {
+            logUtil.error("获取论坛评论失败", e);
+            return new Result(ResultCode.R_UpdateDbFailed);
+        }
+    }
+
+    @Override
+    public Result sendComment(ForumComment forumComment) {
+        try {
+            String userId = ThreadLocalUtil.getUserId();
+            if(userId == null){
+                return new Result(ResultCode.R_UserNotFound);
+            }
+            forumComment.setUserId(userId);
+            forumComment.setCommentId(UUID.randomUUID().toString());
+            forumComment.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+            forumCommentRepository.save(forumComment);
+            return new Result(ResultCode.R_Ok);
+        } catch (Exception e) {
+            logUtil.error("发送论坛评论失败", e);
+            return new Result(ResultCode.R_UpdateDbFailed);
+        }
+    }
 
 }
