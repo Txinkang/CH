@@ -32,9 +32,9 @@ public class UserFunController {
 
     @GetMapping("/getAnnouncement")
     public Result getAnnouncement(
-        @RequestParam("announcement_title") String announcementTitle,
-        @RequestParam("page_num") int pageNum,
-        @RequestParam("page_size") int pageSize
+        @RequestParam(value = "announcement_title", required = false) String announcementTitle,
+        @RequestParam(value = "page_num", required = true) int pageNum,
+        @RequestParam(value = "page_size", required = true) int pageSize
     ) {
         return funManageService.getAnnouncement(announcementTitle, pageNum, pageSize);
     }

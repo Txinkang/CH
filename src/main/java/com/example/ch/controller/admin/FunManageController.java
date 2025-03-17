@@ -150,7 +150,7 @@ public class FunManageController {
     public Result deleteProduct(@RequestParam("product_id") String productId) {
         return funManageService.deleteProduct(productId);
     }
-    @GetMapping("/getProductComment")
+    @GetMapping("/getProductComments")
     public Result getProductComment(@RequestParam("product_id") String productId, @RequestParam("page_num") int pageNum, @RequestParam("page_size") int pageSize) {
         return funManageService.getProductComment(productId, pageNum, pageSize);
     }

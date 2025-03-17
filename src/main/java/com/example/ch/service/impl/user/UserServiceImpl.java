@@ -139,9 +139,14 @@ public class UserServiceImpl implements UserService {
             }
             //验证所要修改信息是否已存在
             User queryUser = userRepository.findByUserId(userId);
-            if (!Strings.isEmpty(user.getUserAccount()) && queryUser.getUserAccount().equals(user.getUserAccount())) {
-                return new Result(ResultCode.R_UserAccountIsExist);
-            } else {
+            if(queryUser == null){
+                return new Result(ResultCode.R_UserNotFound);
+            }
+            if (!Strings.isEmpty(user.getUserAccount())) {
+                User queryUserAccount = userRepository.findByUserAccount(user.getUserAccount());
+                if (queryUserAccount != null && !queryUserAccount.getUserId().equals(userId)) {
+                    return new Result(ResultCode.R_UserAccountIsExist);
+                }
                 queryUser.setUserAccount(user.getUserAccount());
             }
             if (!Strings.isEmpty(user.getUserPassword())) {

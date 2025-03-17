@@ -2,7 +2,9 @@ package com.example.ch.service.impl.admin;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.logging.log4j.util.Strings;
@@ -114,7 +116,7 @@ public class FunManageServiceImpl implements FunManageService {
             }
             if (!Strings.isEmpty(bannerName)) {
                 Banner queryBannerName = bannerRepository.findByBannerName(bannerName);
-                if (queryBannerName != null) {
+                if (queryBannerName != null && !queryBannerName.getBannerId().equals(bannerId)) {
                     return new Result(ResultCode.R_FileNameExists);
                 }
                 banner.setBannerName(bannerName);
@@ -225,7 +227,7 @@ public class FunManageServiceImpl implements FunManageService {
             }
             if (!Strings.isEmpty(updateAnnouncement.getAnnouncementTitle())) {
                 Announcement queryAnnouncementTitle = announcementRepository.findByAnnouncementTitle(updateAnnouncement.getAnnouncementTitle());
-                if (queryAnnouncementTitle != null) {
+                if (queryAnnouncementTitle != null && !queryAnnouncementTitle.getAnnouncementId().equals(announcement.getAnnouncementId())) {
                     return new Result(ResultCode.R_FileNameExists);
                 }
                 announcement.setAnnouncementTitle(updateAnnouncement.getAnnouncementTitle());
@@ -324,7 +326,7 @@ public class FunManageServiceImpl implements FunManageService {
             }
             if (!Strings.isEmpty(updatePost.getPostTitle())) {
                 ForumPost queryPostTitle = forumPostRepository.findByPostTitle(updatePost.getPostTitle());
-                if (queryPostTitle != null) {
+                if (queryPostTitle != null && !queryPostTitle.getPostId().equals(post.getPostId())) {
                     return new Result(ResultCode.R_FileNameExists);
                 }
                 post.setPostTitle(updatePost.getPostTitle());
@@ -441,7 +443,7 @@ public class FunManageServiceImpl implements FunManageService {
             }
             if (!Strings.isEmpty(productName) && productName != null) {
                 Product queryProductName = productRepository.findByProductName(productName);
-                if (queryProductName != null) {
+                if (queryProductName != null && !queryProductName.getProductId().equals(product.getProductId())) {
                     return new Result(ResultCode.R_FileNameExists);
                 }
                 product.setProductName(productName);
@@ -531,9 +533,9 @@ public class FunManageServiceImpl implements FunManageService {
     @Override
     public Result getProductComment(String productId, int pageNum, int pageSize) {
         try {
-            PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
-            Page<ProductComment> page = productCommentRepository.findByProductId(productId, pageRequest);
-            return new Result(ResultCode.R_Ok, page.getContent());
+            //PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
+            List<ProductComment> productCommentList = productCommentRepository.findByProductIdOrderByCreatedAtDesc(productId);
+            return new Result(ResultCode.R_Ok, productCommentList);
         } catch (Exception e) {
             logUtil.error("获取商品评价失败", e);
             return new Result(ResultCode.R_UpdateDbFailed);
@@ -544,24 +546,24 @@ public class FunManageServiceImpl implements FunManageService {
     public Result getOrder(String userAccount, String productName, String orderId, int pageNum, int pageSize) {
         try {
             PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);  
-            PageResponse<Orders> pageResponse = new PageResponse<>();
-            // 先查询用户账号
-            User user = null;
-            if(userAccount != null && !userAccount.isEmpty()){
-                user = userRepository.findByUserAccount(userAccount);
-                if (user == null) {
-                    return new Result(ResultCode.R_Ok, new ArrayList<>());
-                }
-            }
+            PageResponse<Map<String, Object>> pageResponse = new PageResponse<>();
+            // // 先查询用户账号
+            // User user = null;
+            // if(userAccount != null && !userAccount.isEmpty()){
+            //     user = userRepository.findByUserAccount(userAccount);
+            //     if (user == null) {
+            //         return new Result(ResultCode.R_Ok, new ArrayList<>());
+            //     }
+            // }
 
-            // 查询商品
-            Product product = null;
-            if(productName != null && !productName.isEmpty()){
-                product = productRepository.findByProductName(productName); 
-                if (product == null) {
-                    return new Result(ResultCode.R_Ok, new ArrayList<>());
-                }
-            }
+            // // 查询商品
+            // Product product = null;
+            // if(productName != null && !productName.isEmpty()){
+            //     product = productRepository.findByProductName(productName); 
+            //     if (product == null) {
+            //         return new Result(ResultCode.R_Ok, new ArrayList<>());
+            //     }
+            // }
 
             // 查询订单
             Orders order = null;
@@ -573,26 +575,62 @@ public class FunManageServiceImpl implements FunManageService {
             }
 
             // 组合查询订单
+            // Page<Orders> page;
+            // if (user != null && product != null && order != null) {
+            //     page = ordersRepository.findByUserIdAndProductIdAndOrderId(user.getUserId(), product.getProductId(), order.getOrderId(), pageRequest);
+            // } else if (user != null && product != null) {
+            //     page = ordersRepository.findByUserIdAndProductId(user.getUserId(), product.getProductId(), pageRequest);
+            // } else if (user != null && order != null) {
+            //     page = ordersRepository.findByUserIdAndOrderId(user.getUserId(), order.getOrderId(), pageRequest);
+            // } else if (product != null && order != null) {
+            //     page = ordersRepository.findByProductIdAndOrderId(product.getProductId(), order.getOrderId(), pageRequest);
+            // } else if (user != null) {
+            //     page = ordersRepository.findByUserId(user.getUserId(), pageRequest);
+            // } else if (product != null) {
+            //     page = ordersRepository.findByProductId(product.getProductId(), pageRequest);
+            // } else if (order != null) {
+            //     page = ordersRepository.findByOrderId(order.getOrderId(), pageRequest);
+            // } else {
+            //     page = ordersRepository.findAll(pageRequest);
+            // }
+
             Page<Orders> page;
-            if (user != null && product != null && order != null) {
-                page = ordersRepository.findByUserIdAndProductIdAndOrderId(user.getUserId(), product.getProductId(), order.getOrderId(), pageRequest);
-            } else if (user != null && product != null) {
-                page = ordersRepository.findByUserIdAndProductId(user.getUserId(), product.getProductId(), pageRequest);
-            } else if (user != null && order != null) {
-                page = ordersRepository.findByUserIdAndOrderId(user.getUserId(), order.getOrderId(), pageRequest);
-            } else if (product != null && order != null) {
-                page = ordersRepository.findByProductIdAndOrderId(product.getProductId(), order.getOrderId(), pageRequest);
-            } else if (user != null) {
-                page = ordersRepository.findByUserId(user.getUserId(), pageRequest);
-            } else if (product != null) {
-                page = ordersRepository.findByProductId(product.getProductId(), pageRequest);
-            } else if (order != null) {
+            if (order != null) {
                 page = ordersRepository.findByOrderId(order.getOrderId(), pageRequest);
             } else {
                 page = ordersRepository.findAll(pageRequest);
             }
+
+            // 创建包含商品名称的返回对象
+            List<Orders> orders = page.getContent();
+            List<Map<String, Object>> orderWithProducts = new ArrayList<>();
+            
+            for (Orders o : orders) {
+                Map<String, Object> orderMap = new HashMap<>();
+                orderMap.put("orderId", o.getOrderId());
+                orderMap.put("userId", o.getUserId());
+                orderMap.put("name", o.getName());
+                orderMap.put("phone", o.getPhone());
+                orderMap.put("address", o.getAddress());
+                orderMap.put("productId", o.getProductId());
+                orderMap.put("productAmount", o.getProductAmount());
+                orderMap.put("singlePrice", o.getSinglePrice());
+                orderMap.put("totalPrice", o.getTotalPrice());
+                orderMap.put("status", o.getStatus());
+                orderMap.put("createdAt", o.getCreatedAt());
+                orderMap.put("updatedAt", o.getUpdatedAt());
+                Product p = productRepository.findById(o.getProductId()).orElse(null);
+                if (p != null) {
+                    orderMap.put("productName", p.getProductName());
+                } else {
+                    orderMap.put("productName", "");
+                }
+                
+                orderWithProducts.add(orderMap);
+            }
+
             pageResponse.setTotal_item(page.getTotalElements());
-            pageResponse.setData(page.getContent());
+            pageResponse.setData(orderWithProducts);
             return new Result(ResultCode.R_Ok, pageResponse);
             
         } catch (Exception e) {

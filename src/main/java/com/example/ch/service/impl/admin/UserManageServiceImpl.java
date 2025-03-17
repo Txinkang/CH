@@ -67,7 +67,7 @@ public class UserManageServiceImpl implements UserManageService {
             if(userInfo != null){
                 if(user.getUserAccount() != null && !user.getUserAccount().isEmpty()){
                     User queryUser = userRepository.findByUserAccount(user.getUserAccount());
-                    if(queryUser != null){
+                    if(queryUser != null && !queryUser.getUserAccount().equals(userInfo.getUserAccount())){
                         return new Result(ResultCode.R_UserAccountIsExist);
                     }
                     userInfo.setUserAccount(user.getUserAccount());
@@ -139,7 +139,7 @@ public class UserManageServiceImpl implements UserManageService {
             if(adminInfo != null){
                 if(admin.getAdminAccount() != null && !admin.getAdminAccount().isEmpty()){
                     Admin queryAdmin = adminRepository.findByAdminAccount(admin.getAdminAccount());
-                    if(queryAdmin != null){
+                    if(queryAdmin != null && !queryAdmin.getAdminAccount().equals(adminInfo.getAdminAccount())){
                         return new Result(ResultCode.R_UserAccountIsExist);
                     }
                     adminInfo.setAdminAccount(admin.getAdminAccount());
@@ -166,7 +166,8 @@ public class UserManageServiceImpl implements UserManageService {
             Admin adminInfo = adminRepository.findByAdminId(adminId);
             if(adminInfo != null){
                 adminRepository.delete(adminInfo);
-                return new Result(ResultCode.R_Ok);
+                boolean redisDelete = redisService.delete(RedisConstData.USER_LOGIN_TOKEN + adminInfo.getAdminId());
+                return new Result(redisDelete ? ResultCode.R_Ok : ResultCode.R_UpdateDbFailed);
             }else{
                 return new Result(ResultCode.R_UserNotFound);
             }

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.ch.common.Response.PageResponse;
@@ -107,7 +108,7 @@ public class HeritageServiceImpl implements HeritageService {
             }
             if (!Strings.isEmpty(updateNew.getNewTitle())) {
                 HeritageNew queryNewTitle = heritageNewRepository.findByNewTitle(updateNew.getNewTitle());
-                if (queryNewTitle != null) {
+                if (queryNewTitle != null && !queryNewTitle.getNewId().equals(updateNew.getNewId())) {
                     return new Result(ResultCode.R_FileExists);
                 }
                 heritageNew.setNewTitle(updateNew.getNewTitle());
@@ -125,6 +126,7 @@ public class HeritageServiceImpl implements HeritageService {
     }
 
     @Override
+    @Transactional
     public Result deleteNew(String newId) {
         try {
             // 验证参数
@@ -171,14 +173,25 @@ public class HeritageServiceImpl implements HeritageService {
             heritageProject.setStatus(heritageApplication.getStatus());
             heritageProjectRepository.save(heritageProject);
             // 再保存申请表
-            if(heritageApplication.getStatus() != HeritageConstantData.HERITAGE_PROJECT_STATUS_REJECTED){
-                heritageApplication.setAuditResponse(null);
+            HeritageApplication queryApplication = heritageApplicationRepository.findByProjectId(heritageApplication.getProjectId());
+            if(queryApplication != null){
+                queryApplication.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+                if(heritageApplication.getStatus() != HeritageConstantData.HERITAGE_PROJECT_STATUS_REJECTED){
+                    queryApplication.setAuditResponse(null);
+                }else{
+                    queryApplication.setAuditResponse(heritageApplication.getAuditResponse());
+                }
+                heritageApplicationRepository.save(queryApplication);
+            }else{
+                heritageApplication.setApplicationId(UUID.randomUUID().toString());
+                heritageApplication.setProjectId(heritageApplication.getProjectId());
+                heritageApplication.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+                heritageApplication.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+                if(heritageApplication.getStatus() != HeritageConstantData.HERITAGE_PROJECT_STATUS_REJECTED){
+                    heritageApplication.setAuditResponse(null);
+                }
+                heritageApplicationRepository.save(heritageApplication);
             }
-            heritageApplication.setApplicationId(UUID.randomUUID().toString());
-            heritageApplication.setProjectId(heritageApplication.getProjectId());
-            heritageApplication.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-            heritageApplication.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
-            heritageApplicationRepository.save(heritageApplication);
             return new Result(ResultCode.R_Ok);
         } catch (Exception e) {
             logUtil.error("审核项目申请失败", e);
@@ -224,7 +237,7 @@ public class HeritageServiceImpl implements HeritageService {
             }
             if (!Strings.isEmpty(projectTitle)) {
                 HeritageProject queryProjectTitle = heritageProjectRepository.findByProjectTitle(projectTitle);
-                if (queryProjectTitle != null) {
+                if (queryProjectTitle != null && !queryProjectTitle.getProjectId().equals(projectId)) {
                     return new Result(ResultCode.R_FileExists);
                 }
                 queryProject.setProjectTitle(projectTitle);

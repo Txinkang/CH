@@ -74,10 +74,10 @@ public class HeritageController {
 
     @PatchMapping("/updateProject")
     public Result updateProject(
-        @RequestParam("project_id") String projectId,
-        @RequestParam("project_title") String projectTitle,
-        @RequestParam("project_content") String projectContent,
-        @RequestParam("project_image") MultipartFile[] projectImage
+        @RequestParam(value = "project_id", required = true) String projectId,
+        @RequestParam(value = "project_title", required = false) String projectTitle,
+        @RequestParam(value = "project_content", required = false) String projectContent,
+        @RequestParam(value = "project_image", required = false) MultipartFile[] projectImage
     ) {
         return heritageService.updateProject(projectId, projectTitle, projectContent, projectImage);
     }

@@ -123,7 +123,7 @@ public class UserHeritageServiceImpl implements UserHeritageService {
             }
             if (!Strings.isEmpty(projectTitle)) {
                 HeritageProject queryProjectTitle = heritageProjectRepository.findByProjectTitle(projectTitle);
-                if (queryProjectTitle != null) {
+                if (queryProjectTitle != null && !queryProjectTitle.getProjectId().equals(projectId)) {
                     return new Result(ResultCode.R_FileExists);
                 }
                 queryProject.setProjectTitle(projectTitle);
@@ -245,7 +245,7 @@ public class UserHeritageServiceImpl implements UserHeritageService {
                 pageResponse.setData(projectList);
             } else {
                 PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
-                Page<HeritageProject> page = heritageProjectRepository.findByStatusNot(HeritageConstantData.HERITAGE_PROJECT_STATUS_PENDING, pageRequest);
+                Page<HeritageProject> page = heritageProjectRepository.findByStatus(HeritageConstantData.HERITAGE_PROJECT_STATUS_APPROVED, pageRequest);
                 pageResponse.setTotal_item(page.getTotalElements());
                 pageResponse.setData(page.getContent());
             }

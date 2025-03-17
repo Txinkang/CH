@@ -3,7 +3,9 @@ package com.example.ch.service.impl.user;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -211,9 +213,37 @@ public class UserFunServiceImpl implements UserFunService {
             }
             PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
             Page<Orders> page = ordersRepository.findByUserId(userId, pageRequest);
-            PageResponse<Orders> pageResponse = new PageResponse<>();
+            PageResponse<Map<String, Object>> pageResponse = new PageResponse<>();
+            // 创建包含商品名称的返回对象
+            List<Orders> orders = page.getContent();
+            List<Map<String, Object>> orderWithProducts = new ArrayList<>();
+            
+            for (Orders o : orders) {
+                Map<String, Object> orderMap = new HashMap<>();
+                orderMap.put("orderId", o.getOrderId());
+                orderMap.put("userId", o.getUserId());
+                orderMap.put("name", o.getName());
+                orderMap.put("phone", o.getPhone());
+                orderMap.put("address", o.getAddress());
+                orderMap.put("productId", o.getProductId());
+                orderMap.put("productAmount", o.getProductAmount());
+                orderMap.put("singlePrice", o.getSinglePrice());
+                orderMap.put("totalPrice", o.getTotalPrice());
+                orderMap.put("status", o.getStatus());
+                orderMap.put("createdAt", o.getCreatedAt());
+                orderMap.put("updatedAt", o.getUpdatedAt());
+                Product p = productRepository.findById(o.getProductId()).orElse(null);
+                if (p != null) {
+                    orderMap.put("productName", p.getProductName());
+                } else {
+                    orderMap.put("productName", "");
+                }
+                
+                orderWithProducts.add(orderMap);
+            }
+
             pageResponse.setTotal_item(page.getTotalElements());
-            pageResponse.setData(page.getContent());
+            pageResponse.setData(orderWithProducts);
             return new Result(ResultCode.R_Ok, pageResponse);
         } catch (Exception e) {
             logUtil.error("获取订单失败", e);
@@ -227,6 +257,9 @@ public class UserFunServiceImpl implements UserFunService {
             String userId = ThreadLocalUtil.getUserId();
             if(userId == null){
                 return new Result(ResultCode.R_UserNotFound);
+            }
+            if(productComment.getProductScore() > 5 || productComment.getProductScore() < 0){
+                return new Result(ResultCode.R_ParamError);
             }
             productComment.setUserId(userId);
             productComment.setProductCommentId(UUID.randomUUID().toString());
@@ -242,9 +275,9 @@ public class UserFunServiceImpl implements UserFunService {
     @Override
     public Result getProductComment(String productId, int pageNum, int pageSize) {
         try {
-            PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
-            Page<ProductComment> page = productCommentRepository.findByProductId(productId, pageRequest);
-            return new Result(ResultCode.R_Ok, page.getContent());
+            //PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
+            List<ProductComment> productCommentList = productCommentRepository.findByProductIdOrderByCreatedAtDesc(productId);
+            return new Result(ResultCode.R_Ok, productCommentList);
         } catch (Exception e) {
             logUtil.error("获取商品评价失败", e);
             return new Result(ResultCode.R_UpdateDbFailed);
@@ -274,7 +307,20 @@ public class UserFunServiceImpl implements UserFunService {
                 return new Result(ResultCode.R_UserNotFound);
             }
             List<Cart> cartList = cartRepository.findByUserId(userId);
-            return new Result(ResultCode.R_Ok, cartList);
+            List<Map<String, Object>> cartMapList = new ArrayList<>();
+            for(Cart cart : cartList){
+                Map<String, Object> cartMap = new HashMap<>();
+                Product product = productRepository.findByProductId(cart.getProductId());
+                cartMap.put("cartId", cart.getCartId());
+                cartMap.put("productId", cart.getProductId());
+                cartMap.put("productName", product.getProductName());
+                cartMap.put("productPrice", product.getProductPrice());
+                cartMap.put("productAmount", cart.getProductAmount());
+                cartMap.put("productImage", product.getProductImage());
+                cartMap.put("productDescription", product.getProductDescription());
+                cartMapList.add(cartMap);
+            }
+            return new Result(ResultCode.R_Ok, cartMapList);
         } catch (Exception e) {
             logUtil.error("获取购物车失败", e);
             return new Result(ResultCode.R_UpdateDbFailed);
