@@ -53,7 +53,6 @@ public class UserServiceImpl implements UserService {
             user.setCreatedAt(now);
             user.setUpdatedAt(now);
             //写入数据库
-
             userRepository.save(user);
             return new Result(ResultCode.R_Ok);
         } catch (Exception e) {
@@ -127,7 +126,6 @@ public class UserServiceImpl implements UserService {
             return new Result(ResultCode.R_UpdateDbFailed);
         }
     }
-
 
     @Override
     public Result updateUserInfo(User user) {

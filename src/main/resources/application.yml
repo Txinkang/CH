@@ -23,3 +23,6 @@ uploadFilePath:
   productPicturesPath: ${user.dir}/src/main/resources/static/productPictures
   heritagePicturesPath: ${user.dir}/src/main/resources/static/heritagePictures
   heritageMaterialPath: ${user.dir}/src/main/resources/static/heritageMaterial
+
+server:
+  port: 8888

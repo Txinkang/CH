@@ -41,7 +41,7 @@ import com.example.ch.utils.LogUtil;
 @Service
 public class FunManageServiceImpl implements FunManageService {
     private static final LogUtil logUtil = LogUtil.getLogger(FunManageServiceImpl.class);
-    
+
     @Autowired
     private BannerRepository bannerRepository;
 
@@ -146,10 +146,10 @@ public class FunManageServiceImpl implements FunManageService {
     public Result getBanner(String bannerName, int pageNum, int pageSize) {
         try {
             PageResponse<Banner> pageResponse = new PageResponse<>();
-            if(bannerName != null && !bannerName.isEmpty()){
+            if (bannerName != null && !bannerName.isEmpty()) {
                 List<Banner> bannerList = new ArrayList<>();
                 Banner banner = bannerRepository.findByBannerName(bannerName);
-                if(banner != null){
+                if (banner != null) {
                     bannerList.add(banner);
                 }
                 pageResponse.setTotal_item(bannerList.size());
@@ -184,7 +184,7 @@ public class FunManageServiceImpl implements FunManageService {
             }
             bannerRepository.delete(banner);
             return new Result(ResultCode.R_Ok);
-        }catch(Exception exception){
+        } catch (Exception exception) {
             logUtil.error("删除轮播图失败", exception);
             return new Result(ResultCode.R_UpdateDbFailed);
         }
@@ -248,10 +248,10 @@ public class FunManageServiceImpl implements FunManageService {
     public Result getAnnouncement(String announcementTitle, int pageNum, int pageSize) {
         try {
             PageResponse<Announcement> pageResponse = new PageResponse<>();
-            if(announcementTitle != null && !announcementTitle.isEmpty()){
+            if (announcementTitle != null && !announcementTitle.isEmpty()) {
                 List<Announcement> announcementList = new ArrayList<>();
                 Announcement announcement = announcementRepository.findByAnnouncementTitle(announcementTitle);
-                if(announcement != null){
+                if (announcement != null) {
                     announcementList.add(announcement);
                 }
                 pageResponse.setTotal_item(announcementList.size());
@@ -287,7 +287,6 @@ public class FunManageServiceImpl implements FunManageService {
             return new Result(ResultCode.R_UpdateDbFailed);
         }
     }
-
 
 
     //=======================================论坛=======================================
@@ -347,10 +346,10 @@ public class FunManageServiceImpl implements FunManageService {
     public Result getPost(String postTitle, int pageNum, int pageSize) {
         try {
             PageResponse<ForumPost> pageResponse = new PageResponse<>();
-            if(postTitle != null && !postTitle.isEmpty()){
+            if (postTitle != null && !postTitle.isEmpty()) {
                 List<ForumPost> postList = new ArrayList<>();
                 ForumPost post = forumPostRepository.findByPostTitle(postTitle);
-                if(post != null){
+                if (post != null) {
                     postList.add(post);
                 }
                 pageResponse.setTotal_item(postList.size());
@@ -389,16 +388,15 @@ public class FunManageServiceImpl implements FunManageService {
     }
 
 
-
     //=======================================商品=======================================
     @Override
     public Result addProduct(String productName, String productDescription, double productPrice,
-            MultipartFile[] productImages) {
+                             MultipartFile[] productImages) {
         try {
             // 验证参数
             if (Strings.isEmpty(productName) || Strings.isEmpty(productDescription) || productPrice <= 0 || productImages == null) {
                 return new Result(ResultCode.R_ParamError);
-            }   
+            }
             Product product = productRepository.findByProductName(productName);
             if (product != null) {
                 return new Result(ResultCode.R_FileExists);
@@ -431,7 +429,7 @@ public class FunManageServiceImpl implements FunManageService {
 
     @Override
     public Result updateProduct(String productId, String productName, String productDescription, double productPrice,
-            MultipartFile[] productImages) {
+                                MultipartFile[] productImages) {
         try {
             // 验证参数
             if (Strings.isEmpty(productId)) {
@@ -483,10 +481,10 @@ public class FunManageServiceImpl implements FunManageService {
     public Result getProduct(String productName, int pageNum, int pageSize) {
         try {
             PageResponse<Product> pageResponse = new PageResponse<>();
-            if(productName != null && !productName.isEmpty()){
+            if (productName != null && !productName.isEmpty()) {
                 List<Product> productList = new ArrayList<>();
                 Product product = productRepository.findByProductName(productName);
-                if(product != null){
+                if (product != null) {
                     productList.add(product);
                 }
                 pageResponse.setTotal_item(productList.size());
@@ -545,54 +543,17 @@ public class FunManageServiceImpl implements FunManageService {
     @Override
     public Result getOrder(String userAccount, String productName, String orderId, int pageNum, int pageSize) {
         try {
-            PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);  
+            PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
             PageResponse<Map<String, Object>> pageResponse = new PageResponse<>();
-            // // 先查询用户账号
-            // User user = null;
-            // if(userAccount != null && !userAccount.isEmpty()){
-            //     user = userRepository.findByUserAccount(userAccount);
-            //     if (user == null) {
-            //         return new Result(ResultCode.R_Ok, new ArrayList<>());
-            //     }
-            // }
-
-            // // 查询商品
-            // Product product = null;
-            // if(productName != null && !productName.isEmpty()){
-            //     product = productRepository.findByProductName(productName); 
-            //     if (product == null) {
-            //         return new Result(ResultCode.R_Ok, new ArrayList<>());
-            //     }
-            // }
 
             // 查询订单
             Orders order = null;
-            if(orderId != null && !orderId.isEmpty()){
+            if (orderId != null && !orderId.isEmpty()) {
                 order = ordersRepository.findByOrderId(orderId, pageRequest).getContent().get(0);
                 if (order == null) {
                     return new Result(ResultCode.R_Ok, new ArrayList<>());
                 }
             }
-
-            // 组合查询订单
-            // Page<Orders> page;
-            // if (user != null && product != null && order != null) {
-            //     page = ordersRepository.findByUserIdAndProductIdAndOrderId(user.getUserId(), product.getProductId(), order.getOrderId(), pageRequest);
-            // } else if (user != null && product != null) {
-            //     page = ordersRepository.findByUserIdAndProductId(user.getUserId(), product.getProductId(), pageRequest);
-            // } else if (user != null && order != null) {
-            //     page = ordersRepository.findByUserIdAndOrderId(user.getUserId(), order.getOrderId(), pageRequest);
-            // } else if (product != null && order != null) {
-            //     page = ordersRepository.findByProductIdAndOrderId(product.getProductId(), order.getOrderId(), pageRequest);
-            // } else if (user != null) {
-            //     page = ordersRepository.findByUserId(user.getUserId(), pageRequest);
-            // } else if (product != null) {
-            //     page = ordersRepository.findByProductId(product.getProductId(), pageRequest);
-            // } else if (order != null) {
-            //     page = ordersRepository.findByOrderId(order.getOrderId(), pageRequest);
-            // } else {
-            //     page = ordersRepository.findAll(pageRequest);
-            // }
 
             Page<Orders> page;
             if (order != null) {
@@ -604,7 +565,7 @@ public class FunManageServiceImpl implements FunManageService {
             // 创建包含商品名称的返回对象
             List<Orders> orders = page.getContent();
             List<Map<String, Object>> orderWithProducts = new ArrayList<>();
-            
+
             for (Orders o : orders) {
                 Map<String, Object> orderMap = new HashMap<>();
                 orderMap.put("orderId", o.getOrderId());
@@ -625,14 +586,14 @@ public class FunManageServiceImpl implements FunManageService {
                 } else {
                     orderMap.put("productName", "");
                 }
-                
+
                 orderWithProducts.add(orderMap);
             }
 
             pageResponse.setTotal_item(page.getTotalElements());
             pageResponse.setData(orderWithProducts);
             return new Result(ResultCode.R_Ok, pageResponse);
-            
+
         } catch (Exception e) {
             logUtil.error("获取订单失败", e);
             return new Result(ResultCode.R_UpdateDbFailed);
